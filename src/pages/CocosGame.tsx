@@ -16,9 +16,10 @@ import {
   CocosLessonData,
 } from "../common/courseConstants";
 import { ServiceConfig } from "../services/ServiceConfig";
-import NewScoreCard from "../components/parent/NewScoreCard";
-import ScoreCard from "../components/ScoreCard";
-import { AiTwotoneHeart } from "react-icons/ai";
+import ScoreCard from "../components/parent/ScoreCard";
+import { t } from "i18next";
+import DialogBoxButtons from "../components/parent/DialogBoxButtons​";
+import { FirebaseAnalytics } from "@capacitor-community/firebase-analytics";
 
 const CocosGame: React.FC = () => {
   const history = useHistory();
@@ -31,6 +32,7 @@ const CocosGame: React.FC = () => {
   const [showDialogBox, setShowDialogBox] = useState(false);
   // let gameResult : any;
   const [gameResult, setGameResult] = useState<any>();
+  const currentStudent = Util.getCurrentStudent();
 
   const presentToast = async () => {
     await present({
@@ -65,6 +67,36 @@ const CocosGame: React.FC = () => {
     console.log("GameExit LessonData ", e.detail);
 
     killGame(e);
+    FirebaseAnalytics.logEvent({
+      name: EVENTS.LESSON_INCOMPLETE,
+      params: {
+        user_id: currentStudent?.docId,
+        left_game_no: data.currentGameNumber,
+        left_game_name: data.gameName,
+        chapter_id: data.chapterId,
+        chapter_name: data.chapterName,
+        lesson_id: data.lessonId,
+        lesson_name: data.lessonName,
+        lesson_type: data.lessonType,
+        lesson_session_id: data.lessonSessionId,
+        ml_partner_id: data.mlPartnerId,
+        ml_class_id: data.mlClassId,
+        ml_student_id: data.mlStudentId,
+        course_id: data.courseId,
+        course_name: data.courseName,
+        time_spent: data.timeSpent,
+        total_moves: data.totalMoves,
+        total_games: data.totalGames,
+        correct_moves: data.correctMoves,
+        wrong_moves: data.wrongMoves,
+        game_score: data.gameScore,
+        quiz_score: data.quizScore,
+        game_completed: data.gameCompleted,
+        quiz_completed: data.quizCompleted,
+        game_time_spent: data.gameTimeSpent,
+        quiz_time_spent: data.quizTimeSpent,
+      },
+    });
     setShowDialogBox(false);
     push();
   };
@@ -142,15 +174,37 @@ const CocosGame: React.FC = () => {
       classId,
       schoolId
     );
-    Util.logEvent(EVENTS.LESSON_END, {
-      studentId: currentStudent.docId,
-      courseDocId: courseDocId,
-      lessonDocId: lesson.docId,
-      assignmentId: lesson.assignment?.docId,
-      classId: classId,
-      schoolId: schoolId,
-      ...data,
+    FirebaseAnalytics.logEvent({
+      name: EVENTS.LESSON_END,
+      params: {
+        user_id: currentStudent.docId,
+        assignment_id: lesson.assignment?.docId,
+        chapter_id: data.chapterId,
+        chapter_name: data.chapterName,
+        lesson_id: data.lessonId,
+        lesson_name: data.lessonName,
+        lesson_type: data.lessonType,
+        lesson_session_id: data.lessonSessionId,
+        ml_partner_id: data.mlPartnerId,
+        ml_class_id: data.mlClassId,
+        ml_student_id: data.mlStudentId,
+        course_id: data.courseId,
+        course_name: data.courseName,
+        time_spent: data.timeSpent,
+        total_moves: data.totalMoves,
+        total_games: data.totalGames,
+        correct_moves: data.correctMoves,
+        wrong_moves: data.wrongMoves,
+        game_score: data.gameScore,
+        quiz_score: data.quizScore,
+        game_completed: data.gameCompleted,
+        quiz_completed: data.quizCompleted,
+        game_time_spent: data.gameTimeSpent,
+        quiz_time_spent: data.quizTimeSpent,
+        score: data.score,
+      },
     });
+    console.log("🚀 ~ file: CocosGame.tsx:88 ~ saveTempData ~ result:", result);
     console.log("🚀 ~ file: CocosGame.tsx:88 ~ saveTempData ~ result:", result);
     let tempAssignmentCompletedIds = localStorage.getItem(
       ASSIGNMENT_COMPLETED_IDS
@@ -179,31 +233,37 @@ const CocosGame: React.FC = () => {
         <Loading isLoading={isLoading} />
         {showDialogBox && (
           <div>
-            <NewScoreCard
+            <ScoreCard
               width={"50vw"}
-              height={"55vh"}
-              title={"Congratulations🎊🎉"}
+              height={"60vh"}
+              title={t("Congratulations🎊🎉")}
               score={gameResult.detail.gameScore}
-              message={"You Completed the Lesson"}
+              message={t("You Completed the Lesson:")}
               showDialogBox={showDialogBox}
-              yesText={"Like the Game" }
+              yesText={t("Like the Game")}
               lessonName={gameResult.detail.chapterName}
-              noText={"Continue Playing"}
+              noText={t("Continue Playing")}
               handleClose={(e: any) => {
                 setShowDialogBox(true);
                 // saveTempData(gameResult.detail, undefined);
                 // push();
               }}
-              onYesButtonClicked={(e: any) => {
+              onYesButtonClicked={async (e: any) => {
                 setShowDialogBox(false);
-                saveTempData(gameResult.detail, true);
-                console.log("------------------the game result ",gameResult.detail.score);
+                await saveTempData(gameResult.detail, true);
+                console.log(
+                  "------------------the game result ",
+                  gameResult.detail.score
+                );
                 push();
               }}
-              onContinueButtonClicked={(e: any) => {
+              onContinueButtonClicked={async (e: any) => {
                 setShowDialogBox(false);
-                saveTempData(gameResult.detail, undefined);
-                console.log("------------------the game result ",gameResult.detail.score);
+                await saveTempData(gameResult.detail, undefined);
+                console.log(
+                  "------------------the game result ",
+                  gameResult.detail.score
+                );
                 push();
               }}
             />
